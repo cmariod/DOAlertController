@@ -140,7 +140,7 @@ class DOAlertAnimation : NSObject, UIViewControllerAnimatedTransitioning {
 
 // MARK: DOAlertController Class
 
-class DOAlertController : UIViewController, UITextFieldDelegate, UIViewControllerTransitioningDelegate {
+class DOAlertController : UIViewController, UITextFieldDelegate {
     
     // Message
     var message: String?
@@ -257,8 +257,8 @@ class DOAlertController : UIViewController, UITextFieldDelegate, UIViewControlle
         
         // NotificationCenter
         NotificationCenter.default.addObserver(self, selector: #selector(DOAlertController.handleAlertActionEnabledDidChangeNotification(_:)), name: NSNotification.Name(rawValue: DOAlertActionEnabledDidChangeNotification), object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(DOAlertController.handleKeyboardWillShowNotification(_:)), name: NSNotification.Name.UIKeyboardWillShow, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(DOAlertController.handleKeyboardWillHideNotification(_:)), name: NSNotification.Name.UIKeyboardWillHide, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(DOAlertController.handleKeyboardWillShowNotification(_:)), name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(DOAlertController.handleKeyboardWillHideNotification(_:)), name: UIResponder.keyboardWillHideNotification, object: nil)
         
         // Delegate
         self.transitioningDelegate = self
@@ -266,7 +266,7 @@ class DOAlertController : UIViewController, UITextFieldDelegate, UIViewControlle
         // Screen Size
         var screenSize = UIScreen.main.bounds.size
         if ((UIDevice.current.systemVersion as NSString).floatValue < 8.0) {
-            if (UIInterfaceOrientationIsLandscape(UIApplication.shared.statusBarOrientation)) {
+            if (UIApplication.shared.statusBarOrientation.isLandscape) {
                 screenSize = CGSize(width: screenSize.height, height: screenSize.width)
             }
         }
@@ -534,8 +534,8 @@ class DOAlertController : UIViewController, UITextFieldDelegate, UIViewControlle
             for button in buttons {
                 let action = actions[button.tag - 1] as! DOAlertAction
                 button.titleLabel?.font = buttonFont[action.style]!
-                button.setTitleColor(buttonTextColor[action.style], for: UIControlState())
-                button.setBackgroundImage(bgImage[action.style], for: UIControlState())
+                button.setTitleColor(buttonTextColor[action.style], for: UIControl.State())
+                button.setBackgroundImage(bgImage[action.style], for: UIControl.State())
                 button.setBackgroundImage(bgImageHighlighted[action.style], for: .highlighted)
                 button.setBackgroundImage(bgImageHighlighted[action.style], for: .selected)
                 button.frame = CGRect(x: buttonPositionX, y: buttonAreaPositionY, width: buttonWidth, height: buttonHeight)
@@ -547,8 +547,8 @@ class DOAlertController : UIViewController, UITextFieldDelegate, UIViewControlle
                 let action = actions[button.tag - 1] as! DOAlertAction
                 if (action.style != DOAlertActionStyle.cancel) {
                     button.titleLabel?.font = buttonFont[action.style]!
-                    button.setTitleColor(buttonTextColor[action.style], for: UIControlState())
-                    button.setBackgroundImage(bgImage[action.style], for: UIControlState())
+                    button.setTitleColor(buttonTextColor[action.style], for: UIControl.State())
+                    button.setBackgroundImage(bgImage[action.style], for: UIControl.State())
                     button.setBackgroundImage(bgImageHighlighted[action.style], for: .highlighted)
                     button.setBackgroundImage(bgImageHighlighted[action.style], for: .selected)
                     button.frame = CGRect(x: 0, y: buttonAreaPositionY, width: innerContentWidth, height: buttonHeight)
@@ -566,8 +566,8 @@ class DOAlertController : UIViewController, UITextFieldDelegate, UIViewControlle
                 let button = buttonAreaScrollView.viewWithTag(cancelButtonTag) as! UIButton
                 let action = actions[cancelButtonTag - 1] as! DOAlertAction
                 button.titleLabel?.font = buttonFont[action.style]!
-                button.setTitleColor(buttonTextColor[action.style], for: UIControlState())
-                button.setBackgroundImage(bgImage[action.style], for: UIControlState())
+                button.setTitleColor(buttonTextColor[action.style], for: UIControl.State())
+                button.setBackgroundImage(bgImage[action.style], for: UIControl.State())
                 button.setBackgroundImage(bgImageHighlighted[action.style], for: .highlighted)
                 button.setBackgroundImage(bgImageHighlighted[action.style], for: .selected)
                 button.frame = CGRect(x: 0, y: buttonAreaPositionY, width: innerContentWidth, height: buttonHeight)
@@ -599,7 +599,7 @@ class DOAlertController : UIViewController, UITextFieldDelegate, UIViewControlle
         
         var screenSize = UIScreen.main.bounds.size
         if ((UIDevice.current.systemVersion as NSString).floatValue < 8.0) {
-            if (UIInterfaceOrientationIsLandscape(UIApplication.shared.statusBarOrientation)) {
+            if (UIApplication.shared.statusBarOrientation.isLandscape) {
                 screenSize = CGSize(width: screenSize.height, height: screenSize.width)
             }
         }
@@ -627,7 +627,7 @@ class DOAlertController : UIViewController, UITextFieldDelegate, UIViewControlle
     }
     
     // Button Tapped Action
-    func buttonTapped(_ sender: UIButton) {
+    @objc func buttonTapped(_ sender: UIButton) {
         sender.isSelected = true
         let action = actions[sender.tag - 1] as! DOAlertAction
         if (action.handler != nil) {
@@ -637,7 +637,7 @@ class DOAlertController : UIViewController, UITextFieldDelegate, UIViewControlle
     }
     
     // Handle ContainerView tap gesture
-    func handleContainerViewTapGesture(_ sender: AnyObject) {
+    @objc func handleContainerViewTapGesture(_ sender: AnyObject) {
         // cancel action
         let action = actions[cancelButtonTag] as! DOAlertAction
         if (action.handler != nil) {
@@ -662,15 +662,15 @@ class DOAlertController : UIViewController, UITextFieldDelegate, UIViewControlle
     
     @objc func handleAlertActionEnabledDidChangeNotification(_ notification: Notification) {
         for i in 0..<buttons.count {
-            buttons[i].isEnabled = actions[i].enabled
+            buttons[i].isEnabled = actions[i].isEnabled
         }
     }
     
-    func handleKeyboardWillShowNotification(_ notification: Notification) {
-        if let userInfo = (notification as NSNotification).userInfo as? [String: NSValue] {
-            var keyboardSize = userInfo[UIKeyboardFrameEndUserInfoKey]!.cgRectValue.size
+    @objc func handleKeyboardWillShowNotification(_ notification: Notification) {
+        if let userInfo = notification.userInfo as? [String: NSValue] {
+            var keyboardSize = userInfo[UIResponder.keyboardFrameEndUserInfoKey]!.cgRectValue.size
             if ((UIDevice.current.systemVersion as NSString).floatValue < 8.0) {
-                if (UIInterfaceOrientationIsLandscape(UIApplication.shared.statusBarOrientation)) {
+                if (UIApplication.shared.statusBarOrientation.isLandscape) {
                     keyboardSize = CGSize(width: keyboardSize.height, height: keyboardSize.width)
                 }
             }
@@ -683,7 +683,7 @@ class DOAlertController : UIViewController, UITextFieldDelegate, UIViewControlle
         }
     }
     
-    func handleKeyboardWillHideNotification(_ notification: Notification) {
+    @objc func handleKeyboardWillHideNotification(_ notification: Notification) {
         keyboardHeight = 0.0
         reloadAlertViewHeight()
         containerViewBottomSpaceConstraint.constant = keyboardHeight
@@ -711,7 +711,7 @@ class DOAlertController : UIViewController, UITextFieldDelegate, UIViewControlle
         // Add Button
         let button = UIButton()
         button.layer.masksToBounds = true
-        button.setTitle(action.title, for: UIControlState())
+        button.setTitle(action.title, for: UIControl.State())
         button.isEnabled = action.enabled
         button.layer.cornerRadius = buttonCornerRadius
         button.addTarget(self, action: #selector(DOAlertController.buttonTapped(_:)), for: .touchUpInside)
@@ -734,7 +734,7 @@ class DOAlertController : UIViewController, UITextFieldDelegate, UIViewControlle
         
         let textField = UITextField()
         textField.frame.size = CGSize(width: innerContentWidth, height: textFieldHeight)
-        textField.borderStyle = UITextBorderStyle.none
+        textField.borderStyle = UITextField.BorderStyle.none
         textField.backgroundColor = textFieldBgColor
         textField.delegate = self
         
